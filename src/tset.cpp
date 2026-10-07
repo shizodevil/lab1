@@ -7,11 +7,6 @@
 
 #include "tset.h"
 
-// Fake variables used as placeholders in tests
-static const int FAKE_INT = -1;
-static TBitField FAKE_BITFIELD(1);
-static TSet FAKE_SET(1);
-
 TSet::TSet(int mp) : BitField(mp) // битовое поле мощности mp
 {
     MaxPower = mp;
@@ -26,13 +21,12 @@ TSet::TSet(const TSet &s) : BitField(s.BitField)
 // конструктор преобразования типа
 TSet::TSet(const TBitField &bf) : BitField(bf)
 {
-    MaxPower = BitField.GetLength();
+    MaxPower = bf.GetLength();
 }
 
 TSet::operator TBitField()
 {
-    TBitField tmp(this->BitField);
-    return tmp;
+    return BitField;
 }
 
 int TSet::GetMaxPower(void) const // получить макс. к-во эл-тов
@@ -59,8 +53,11 @@ void TSet::DelElem(const int Elem) // исключение элемента мн
 
 TSet& TSet::operator=(const TSet &s) // присваивание
 {
-    BitField = s.BitField;
-    MaxPower = s.MaxPower;
+    if (this != &s)
+    {
+        BitField = s.BitField;
+        MaxPower = s.MaxPower;
+    }
     return *this;
 }
 
@@ -82,17 +79,15 @@ TSet TSet::operator+(const TSet &s) // объединение
 
 TSet TSet::operator+(const int Elem) // объединение с элементом
 {
-    TSet tmp(BitField);
+    TSet tmp(*this);
     tmp.InsElem(Elem);
-
     return tmp;
 }
 
 TSet TSet::operator-(const int Elem) // разность с элементом
 {
-    TSet tmp(BitField);
+    TSet tmp(*this);
     tmp.DelElem(Elem);
-
     return tmp;
 }
 
@@ -110,41 +105,49 @@ TSet TSet::operator~(void) // дополнение
 
 // перегрузка ввода/вывода
 
+// формат ввода: {1, 2, 3}
 istream &operator>>(istream &istr, TSet &s) // ввод
 {
-
-    int tmp;
     char ch;
+    int elem;
 
+    // ждём открывающую скобку
     do {
-        istr >> ch;
+        if (!(istr >> ch))
+            return istr;
     } while (ch != '{');
 
-    do
+    // читаем элементы до закрывающей скобки
+    while (istr >> ch)
     {
-        istr >> tmp;
-        s.InsElem(tmp);
+        if (ch == '}')
+            break;
+        if (ch == ',')
+            continue;
 
-        do
-        {
-            istr >> ch;
-        } while ((ch != ',') || (ch != '}'));
-        
-    } while (ch != '}');
-    
+        istr.putback(ch);
+        if (!(istr >> elem))
+            break;
+        s.InsElem(elem);
+    }
 
     return istr;
 }
 
+// формат вывода: {1, 2, 3}
 ostream& operator<<(ostream &ostr, const TSet &s) // вывод
 {
-    ostr << "{}";
+    bool first = true;
 
-    int n = s.MaxPower;
-
-    for (int i = 0; i < n; i++) {
-        if (s.IsMember(i)) {
-            ostr << " " << i << ",";
+    ostr << "{";
+    for (int i = 0; i < s.MaxPower; i++)
+    {
+        if (s.IsMember(i))
+        {
+            if (!first)
+                ostr << ", ";
+            ostr << i;
+            first = false;
         }
     }
     ostr << "}";
