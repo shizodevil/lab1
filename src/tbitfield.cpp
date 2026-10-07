@@ -18,9 +18,9 @@ TBitField::TBitField() {
 
 TBitField::TBitField(int len)
 {
-    if (len < 1) {
-        throw len;
-    }
+    // if (len < 1) {
+    //     throw len;
+    // }
     if (len == 31) {
         MemLen = 1;
     }
